@@ -8,9 +8,13 @@ const {
   shell,
   Tray,
   nativeImage,
+  protocol
 } = require("electron");
 const url = require("url");
 const path = require("path");
+
+// handles links `whatsapp://<something>`
+const PROTOCOL_PREFIX = 'whatsapp';
 
 // Import electron context menu library
 const contextMenu = require("electron-context-menu");
@@ -711,6 +715,11 @@ if (!singleInstanceLock) {
       mainWindow = null;
       // Quits app
       app.quit();
+    });
+
+    // Register protocol to handle whatsapp:// links
+    protocol.registerHttpProtocol(PROTOCOL_PREFIX, (req, cb) => {
+      console.log(req, req.url, cb);
     });
 
     // Creates a new message count badge for the main window if the Badge variable is enabled

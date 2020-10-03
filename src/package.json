@@ -95,7 +95,15 @@
       ],
       "icon": "build/icon.png",
       "asar": false
-    }
+    },
+    "protocols": [
+      {
+          "name": "Custom Protocol Name",
+          "schemes": [
+              "customProtocol"
+          ]
+      }
+    ]
   },
   "resolutions": {
     "minimist": ">=0.2.1"
