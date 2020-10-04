@@ -99,6 +99,7 @@
     "protocols": [
       {
           "name": "Whatsapp Altus",
+          "role": "Viewer",
           "schemes": [
               "whatsapp"
           ]
