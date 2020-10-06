@@ -10,6 +10,7 @@ const {
   nativeImage,
   protocol
 } = require("electron");
+
 const url = require("url");
 const path = require("path");
 
@@ -209,7 +210,15 @@ const mainMenuTemplate = [
         label: "Close Active Tab",
         accelerator: "CmdOrCtrl+W",
         click() {
-          mainWindow.webContents.send("close-tab");
+          if (
+            Array.from(settings.get("settings")).find(
+              (s) => s.id === "tabClosePrompt"
+            ).value === true
+          ) {
+            confirmCloseTab(mainWindow);
+          } else {
+            mainWindow.webContents.send("close-tab");
+          }
         },
       },
       {
@@ -592,6 +601,15 @@ const windowState = new Store({
   },
 });
 
+// Get icon image
+let iconImage = nativeImage.createFromPath(
+  path.join(
+    __dirname,
+    "/windows/otherAssets/icon" +
+      (process.platform === "linux" ? ".png" : ".ico")
+  )
+);
+
 // Get tray icon image
 let trayIconImage = nativeImage.createFromPath(
   path.join(
@@ -600,6 +618,19 @@ let trayIconImage = nativeImage.createFromPath(
       (process.platform === "linux" ? "tray.png" : "icon.ico")
   )
 );
+
+// Get tray notification image
+let trayIconNotificationImage = nativeImage.createFromPath(
+  path.join(__dirname, "/windows/otherAssets/tray-notification.png")
+);
+
+// Sets the default settings
+let settings = new Store({
+  name: "settings",
+  defaults: {
+    settings: defaultSettings,
+  },
+});
 
 // Using singleInstanceLock for making app single instance
 const singleInstanceLock = app.requestSingleInstanceLock();
@@ -623,14 +654,6 @@ if (!singleInstanceLock) {
     }
   });
 
-  // Sets the default settings
-  let settings = new Store({
-    name: "settings",
-    defaults: {
-      settings: defaultSettings,
-    },
-  });
-
   app.on("ready", () => {
     // Create the main window object
     mainWindow = new BrowserWindow({
@@ -648,13 +671,7 @@ if (!singleInstanceLock) {
       // Set main window background color
       backgroundColor: "#282C34",
       // Set main window icon
-      icon: nativeImage.createFromPath(
-        path.join(
-          __dirname,
-          "/windows/otherAssets/icon" +
-            (process.platform === "linux" ? ".png" : ".ico")
-        )
-      ),
+      icon: iconImage,
       webPreferences: {
         // Enable <webview> tag for embedding WhatsApp
         webviewTag: true,
@@ -891,45 +908,56 @@ if (!singleInstanceLock) {
 
     ipcMain.on("message-indicator", (e, messageCount) => {
       if (
-        messageCount > 0 &&
-        messageCount !== null &&
-        messageCount !== undefined
+        settings
+          .get("settings")
+          .find((setting) => setting.id === "notificationBadge").value
       ) {
-        switch (process.platform) {
-          case "darwin":
-            app.dock.setBadge("·");
-            break;
-          case "win32":
-            if (
-              settings
-                .get("settings")
-                .find((setting) => setting.id === "notificationCountInTray")
-                .value
-            ) {
-              trayBadge.generate(messageCount).then((imgDataUrl) => {
-                const generatedImage = nativeImage.createFromDataURL(
-                  imgDataUrl
-                );
-                if (trayIcon) trayIcon.setImage(generatedImage);
-              });
-            }
-            break;
-          default:
-            break;
-        }
-      } else {
-        switch (process.platform) {
-          case "darwin":
-            app.dock.setBadge("");
-            break;
-          default:
-            if (trayIcon) trayIcon.setImage(trayIconImage);
-            break;
-        }
-      }
+        if (
+          messageCount > 0 &&
+          messageCount !== null &&
+          messageCount !== undefined
+        ) {
+          switch (process.platform) {
+            case "darwin":
+              app.dock.setBadge("·");
+              break;
+            case "win32":
+              if (
+                settings
+                  .get("settings")
+                  .find((setting) => setting.id === "notificationCountInTray")
+                  .value
+              ) {
+                trayBadge.generate(messageCount).then((imgDataUrl) => {
+                  const generatedImage = nativeImage.createFromDataURL(
+                    imgDataUrl
+                  );
+                  if (trayIcon) trayIcon.setImage(generatedImage);
+                });
+              }
+              break;
+            default:
+              if (trayIcon) trayIcon.setImage(trayIconNotificationImage);
 
-      if (process.platform === "win32") {
-        mainWindow.webContents.send("message-indicator", messageCount);
+              mainWindow.setIcon(trayIconNotificationImage);
+              break;
+          }
+        } else {
+          switch (process.platform) {
+            case "darwin":
+              app.dock.setBadge("");
+              break;
+            default:
+              if (trayIcon) trayIcon.setImage(trayIconImage);
+
+              mainWindow.setIcon(iconImage);
+              break;
+          }
+        }
+
+        if (process.platform === "win32") {
+          mainWindow.webContents.send("message-indicator", messageCount);
+        }
       }
     });
   });
@@ -971,6 +999,31 @@ if (!singleInstanceLock) {
         },
       ],
     });
+
+    // Prevents default Enter (instead Control + Enter)
+    c.on("before-input-event", function (event, input) {
+      if (
+        settings.get("settings").find((s) => s.id === "preventEnter").value ===
+        true
+      ) {
+        if (input.key === "Enter" && !input.shift && !input.control) {
+          c.webContents.sendInputEvent({
+            keyCode: "Shift+Return",
+            type: "keyDown",
+          });
+          event.preventDefault();
+          return;
+        }
+
+        if (input.key === "Enter" && input.control) {
+          c.webContents.executeJavaScript(
+            `document.querySelector('[data-icon="send"]').click()`
+          );
+          event.preventDefault();
+          return;
+        }
+      }
+    });
   });
 
   // Quits app if all windows are closed
@@ -994,6 +1047,22 @@ function confirmExit() {
       if (res.response == 0) {
         app.showExitPrompt = false;
         app.quit();
+        return;
+      }
+    });
+}
+
+function confirmCloseTab(mainWindow) {
+  dialog
+    .showMessageBox({
+      type: "question",
+      buttons: ["OK", "Cancel"],
+      title: "Close tab",
+      message: "Are you sure you want to close the tab?",
+    })
+    .then((res) => {
+      if (res.response == 0) {
+        mainWindow.webContents.send("close-tab");
         return;
       }
     });

@@ -29,7 +29,7 @@ const defaultSettings = [
     value: true,
     name: "Custom Titlebar",
     description:
-      "If you are having any issues with the custom titlebar, you can disable it using this setting. <b>NOTE: This setting requires you to restart the whole app for changes to apply.</b>",
+      "If you are having any issues with the custom titlebar, you can disable it using this setting. <b>NOTE: Requires restart of the application to apply.</b>",
     id: "customTitlebar",
   },
   {
@@ -48,11 +48,25 @@ const defaultSettings = [
   },
   {
     value: true,
+    name: "Show Notification Badge",
+    description:
+      "When enabled, Altus will show the notification badge on the dock and tray.  <b>NOTE: Requires restart of the application to apply.</b>",
+    id: "notificationBadge",
+  },
+  {
+    value: true,
     name: "Show Notification Count In Tray Icon (Windows)",
     description:
       "When enabled, Altus will show the notification count on the tray icon on Windows.",
     id: "notificationCountInTray",
   },
+  {
+    value: false,
+    name: "Prevents Default Enter Submit Message",
+    description:
+      "When enabled, Altus will prevent the default Enter for submitting the message, instead, add a new line. (Control + Enter) became the replacement for submitting.",
+    id: "preventEnter",
+  }
 ];
 
 module.exports = {
