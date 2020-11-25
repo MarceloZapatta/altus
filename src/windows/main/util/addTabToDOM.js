@@ -21,11 +21,13 @@ function addTabToDOM(tab_id, tabName) {
     )}</span> <span class="lni lni-cog"></span><span class="lni lni-close"></span></a></li>`
     );
 
+    console.log(global.location.search);
+
     // Create tab content element
     let tabContentElement = document
         .createRange()
         .createContextualFragment(
-            `<div id="tab-content-${tab_id}"><webview id="whatsapp-${tab_id}" preload="./whatsapp.js" src="https://web.whatsapp.com/" useragent="${window.navigator.userAgent.replace(
+            `<div id="tab-content-${tab_id}"><webview id="whatsapp-${tab_id}" preload="./whatsapp.js" src="https://web.whatsapp.com/send${global.location.search}" useragent="${window.navigator.userAgent.replace(
         /(altus|Electron)([^\s]+\s)/g,
         ""
       )}" partition="persist:${tab_id}"></webview></div>`

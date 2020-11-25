@@ -19,7 +19,8 @@
     "start": "electron ."
   },
   "devDependencies": {
-    "electron": "^9.3.0"
+    "electron": "^9.3.0",
+    "electron-builder": "^22.8.1"
   },
   "dependencies": {
     "@simonwep/pickr": "^1.4.6",
@@ -53,7 +54,8 @@
       "background": "build/background.png",
       "icon": "build/icon.icns",
       "iconSize": 100,
-      "contents": [{
+      "contents": [
+        {
           "x": 380,
           "y": 280,
           "type": "link",
@@ -76,18 +78,21 @@
       "allowToChangeInstallationDirectory": "true"
     },
     "win": {
-      "target": [{
-        "target": "nsis",
-        "arch": [
-          "x64",
-          "ia32"
-        ]
-      }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
       "icon": "build/icon.ico"
     },
     "linux": {
       "category": "Chat",
       "target": [
+        "deb",
         "AppImage"
       ],
       "icon": "build/icon.png",
@@ -95,11 +100,10 @@
     },
     "protocols": [
       {
-          "name": "Whatsapp Altus",
-          "role": "Viewer",
-          "schemes": [
-              "whatsapp"
-          ]
+        "name": "Whatsapp Altus",
+        "schemes": [
+          "whatsapp"
+        ]
       }
     ]
   },

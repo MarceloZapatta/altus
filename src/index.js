@@ -14,9 +14,6 @@ const {
 const url = require("url");
 const path = require("path");
 
-// handles links `whatsapp://<something>`
-const PROTOCOL_PREFIX = 'whatsapp';
-
 // Import electron context menu library
 const contextMenu = require("electron-context-menu");
 
@@ -644,6 +641,25 @@ if (!singleInstanceLock) {
   app.on("second-instance", () => {
     // Checks if mainWindow object exists
     if (mainWindow) {
+
+      openUrlScheme = process.argv[1];
+      queryOpenUrlScheme = '';
+
+      if (openUrlScheme) {
+        queryBeginIndex = 16;
+
+        queryOpenUrlScheme = openUrlScheme.substring(queryBeginIndex);
+      }
+
+      // Load the main window HTML file
+      mainWindow.loadURL(
+        url.format({
+          pathname: path.join(__dirname, "windows", "main", "main.html"),
+          protocol: "file:",
+          slashes: true,
+        }) + queryOpenUrlScheme
+      );
+
       // Checks if main window is minimized
       if (mainWindow.isMinimized()) {
         // Restores the main window
@@ -685,6 +701,8 @@ if (!singleInstanceLock) {
       minHeight: 600,
     });
 
+    mainWindow.openDevTools();
+
     mainWindow.setBounds(windowState.get("bounds"));
 
     if (windowState.get("isMaximized")) {
@@ -697,13 +715,22 @@ if (!singleInstanceLock) {
       mainWindow.show();
     });
 
+    openUrlScheme = process.argv[1];
+    queryOpenUrlScheme = '';
+
+    if (openUrlScheme) {
+      queryBeginIndex = 16;
+
+      queryOpenUrlScheme = openUrlScheme.substring(queryBeginIndex);
+    }
+
     // Load the main window HTML file
     mainWindow.loadURL(
       url.format({
         pathname: path.join(__dirname, "windows", "main", "main.html"),
         protocol: "file:",
         slashes: true,
-      })
+      }) + queryOpenUrlScheme
     );
 
     // Main Window Close Event
@@ -732,11 +759,6 @@ if (!singleInstanceLock) {
       mainWindow = null;
       // Quits app
       app.quit();
-    });
-
-    // Register protocol to handle whatsapp:// links
-    protocol.registerHttpProtocol(PROTOCOL_PREFIX, (req, cb) => {
-      console.log(req, req.url, cb);
     });
 
     // Creates a new message count badge for the main window if the Badge variable is enabled
