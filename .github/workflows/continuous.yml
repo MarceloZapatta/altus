@@ -11,7 +11,7 @@ on:
       - "*.*"
 
 jobs:
-  AppImage:
+  Debian:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
@@ -29,89 +29,16 @@ jobs:
           yarn install
           yarn run svelte-build
           yarn add electron-builder --dev
-          yarn run electron-builder -l appimage --publish never
-          ls dist
-          mkdir -p dist/appimage
-          mv dist/*.AppImage dist/appimage/.
-          cd dist/appimage
-          ./*.AppImage --appimage-extract
-          wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-          chmod +x ./appimagetool-x86_64.AppImage
-          rm Altus*.AppImage
-          ARCH=x86_64 ./appimagetool-x86_64.AppImage --appimage-extract-and-run squashfs-root -n -u 'gh-releases-zsync|amanharwara|altus|continuous|Altus*.AppImage.zsync' Altus-`git describe --tags --always`-x86_64.AppImage
-          rm -r ./appimagetool-x86_64.AppImage
-          chmod +x *.AppImage
-          rm -rf squashfs-root
+          yarn run electron-builder -l deb --publish never
+          mv dist/*.deb altus_amd64.deb
 
-      - name: Upload Appimage
+      - name: Upload Debian
         uses: actions/upload-artifact@v1.0.0
         with:
-          name: altus-continuous-x86_64.AppImage
+          name: altus_amd64.deb
           path: 'dist/appimage/'
-          
- 
-  Darwin:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 15
-
-      - name: Current Directory Structure
-        run: |
-          ls 
-          git describe --tags --always
-      
-      - name: Build Altus
-        run: |
-          yarn install
-          yarn run svelte-build
-          yarn add electron-builder --dev
-          yarn run electron-builder --mac --publish never
-          ls dist
-          mkdir -p dist/darwin
-          mv dist/*.dmg dist/darwin/.
-
-      - name: Upload DMG
-        uses: actions/upload-artifact@v1.0.0
-        with:
-          name: altus-continuous-x86_64.dmg
-          path: 'dist/darwin/'
- 
-  Windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 15
-
-      - name: Current Directory Structure
-        run: |
-          ls 
-          git describe --tags --always
-      
-      - name: Build Altus
-        run: |
-          yarn install
-          yarn run svelte-build
-          yarn add electron-builder --dev
-          yarn run electron-builder --windows --publish never
-          ls dist
-          mkdir -p dist/windows
-          mv dist/*.exe dist/windows/.
-          cd dist/windows
-          
-
-      - name: Upload Exe
-        uses: actions/upload-artifact@v1.0.0
-        with:
-          name: altus-continuous-x86_64.exe
-          path: 'dist/windows/'
-
   Release:
-    needs: [AppImage, Windows, Darwin]
+    needs: [Debian]
     runs-on: ubuntu-latest
 
     steps:
@@ -122,9 +49,7 @@ jobs:
       with:
         prerelease: false
         files: |
-          altus-continuous-x86_64.AppImage
-          altus-continuous-x86_64.exe
-          altus-continuous-x86_64.dmg
+          altus_amd64.deb
 
         repo_token: ${{ secrets.GITHUB_TOKEN }}
  
