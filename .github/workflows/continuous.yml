@@ -36,7 +36,7 @@ jobs:
         uses: actions/upload-artifact@v1.0.0
         with:
           name: altus_amd64.deb
-          path: 'dist/appimage/'
+          path: 'dist/'
   Release:
     needs: [Debian]
     runs-on: ubuntu-latest
